@@ -1,0 +1,4 @@
+id,task,owner,repeat,on
+SUPPLY,Check shared supplies,Operations,weekly,Mon|Wed
+SUMMARY,Send workshop attendance summary,Coordinator,monthly,15
+NOTICE,Review room noticeboard,Office,weekly,Mon

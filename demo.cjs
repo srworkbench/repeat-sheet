@@ -1,0 +1,16 @@
+const fs=require('node:fs'),assert=require('node:assert/strict'),C=require('./core.js');
+const source=fs.readFileSync('example.csv','utf8');
+const original=C.expand(C.readTasks(source).tasks,'2026-11').rows;
+const o=original.find(r=>r.id==='SUPPLY'&&r.due==='2026-11-02');
+let completed=C.mark(o,[],true,'2026-11-02T18:00:00.000Z');
+const revised='id,task,owner,repeat,on\nARRIVAL,Prepare workshop room,Office,once,2026-11-02\n'+source.trim().split('\n').slice(1).reverse().join('\n')+'\n';
+const refreshed=C.expand(C.readTasks(revised).tasks,'2026-11').rows;
+assert.equal(refreshed.filter(r=>C.stateFor(r,completed).status==='done').length,1);
+assert.equal(C.stateFor(refreshed.find(r=>r.id==='ARRIVAL'),completed).status,'open');
+const changedSource=revised.replace('Check shared supplies','Check and restock shared supplies');
+const changed=C.expand(C.readTasks(changedSource).tasks,'2026-11').rows;
+assert.equal(C.stateFor(changed.find(r=>r.key===o.key),completed).status,'changed');
+const saved=C.backup(changedSource,'2026-11',completed),restored=C.restore(saved);assert.deepEqual(restored.completed,completed);
+fs.mkdirSync('output',{recursive:true});
+fs.writeFileSync('output/backup.json',saved);fs.writeFileSync('output/checklist.csv',C.monthCSV(changed,completed));fs.writeFileSync('output/completed.csv',C.historyCSV(completed));
+console.log('15 original dated tasks; one supply check completed. Reordered CSV plus a new task generates 16 dates, with the check still bound to SUPPLY on November 2. Changed instructions are unchecked and flagged; backup round-trip preserves the original completed record.');
